@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UXS 다과 선반 재고</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: linear-gradient(160deg, #fdf6ee 0%, #f5ede0 100%); min-height: 100vh; }
+    input:focus { outline: 2px solid #c48b3a; outline-offset: 1px; }
+    button:focus-visible { outline: 2px solid #c48b3a; outline-offset: 2px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const API_URL = "https://script.google.com/macros/s/AKfycbwfv3ABF-LMkzZKlA1RIixfOrSdpz5a6sZtNe5pHInOdHXv-6w9vqRO160L9FBe3rbwvA/exec";
+    const FLOOR_ORDER = [4, 3, 2, 1];
+
+    function groupByFloor(data) {
+      const map = {};
+      FLOOR_ORDER.forEach(f => { map[f] = { floor: f, label: `${f}층`, items: [] }; });
+      data.forEach(row => {
+        const f = parseInt(row.floor);
+        if (map[f]) map[f].items.push(row);
+        else map[f] = { floor: f, label: row.label || `${f}층`, items: [row] };
+      });
+      return FLOOR_ORDER.map(f => map[f] || { floor: f, label: `${f}층`, items: [] });
+    }
+
+    function ItemCard({ item, onDelete }) {
+      return (
+        <div style={{
+          background: "#fff", borderRadius: "14px", padding: "14px 12px 12px",
+          display: "flex", flexDirection: "column", alignItems: "center", gap: "8px",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04)",
+          position: "relative", minWidth: "110px", maxWidth: "140px", flex: "1 1 110px",
+        }}>
+          <button onClick={onDelete} title="삭제" style={{
+            position: "absolute", top: "6px", right: "8px", background: "none",
+            border: "none", cursor: "pointer", fontSize: "11px", color: "#bbb", padding: "0", lineHeight: 1,
+          }}>✕</button>
+          <div style={{ fontSize: "30px", lineHeight: 1 }}>{item.icon}</div>
+          <div style={{
+            fontSize: "11.5px", color: "#444", textAlign: "center",
+            fontWeight: 500, lineHeight: 1.35, wordBreak: "keep-all", minHeight: "30px",
+          }}>{item.name}</div>
+        </div>
+      );
+    }
+
+    function AddItemModal({ floorLabel, onAdd, onClose }) {
+      const [name, setName] = useState("");
+      const [icon, setIcon] = useState("🍫");
+      const commonEmojis = ["☕","🍵","🥤","🧃","🍪","🍫","🍬","🍭","🥜","🌰","🍘","🍿","🥬","🌶️","🍈","🐟","🐻","🌼","🍒","⭐","🥥","🍑","🍓","🍌"];
+
+      return (
+        <div onClick={onClose} style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 100,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: "#fff", borderRadius: "18px", padding: "28px 24px",
+            width: "320px", boxShadow: "0 8px 40px rgba(0,0,0,0.18)",
+          }}>
+            <div style={{ fontWeight: 700, fontSize: "16px", marginBottom: "4px", color: "#3a2a14" }}>✚ 다과 추가</div>
+            <div style={{ fontSize: "12px", color: "#b07a3a", marginBottom: "18px" }}>{floorLabel}</div>
+
+            <div style={{ marginBottom: "12px" }}>
+              <label style={{ fontSize: "12px", color: "#888", display: "block", marginBottom: "4px" }}>이름</label>
+              <input value={name} onChange={e => setName(e.target.value)} placeholder="예: 허니버터칩"
+                style={{ width: "100%", border: "1.5px solid #e2c89a", borderRadius: "8px", padding: "8px 10px", fontSize: "14px" }} />
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{ fontSize: "12px", color: "#888", display: "block", marginBottom: "6px" }}>이모지</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "8px" }}>
+                {commonEmojis.map(e => (
+                  <button key={e} onClick={() => setIcon(e)} style={{
+                    fontSize: "18px",
+                    background: icon === e ? "#fff3e0" : "#f9f9f9",
+                    border: icon === e ? "2px solid #c48b3a" : "1.5px solid #eee",
+                    borderRadius: "8px", padding: "3px 6px", cursor: "pointer",
+                  }}>{e}</button>
+                ))}
+              </div>
+              <input value={icon} onChange={e => setIcon(e.target.value)} maxLength={2} placeholder="직접 입력"
+                style={{ width: "80px", border: "1.5px solid #e2c89a", borderRadius: "8px", padding: "6px 10px", fontSize: "18px", textAlign: "center" }} />
+            </div>
+
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button onClick={onClose} style={{
+                flex: 1, padding: "10px", border: "1.5px solid #ddd",
+                borderRadius: "10px", background: "#f9f9f9", cursor: "pointer", fontSize: "14px",
+              }}>취소</button>
+              <button onClick={() => { if (name.trim()) onAdd({ name: name.trim(), icon }); }} style={{
+                flex: 1, padding: "10px", border: "none", borderRadius: "10px",
+                background: "#c48b3a", color: "#fff", cursor: "pointer", fontSize: "14px", fontWeight: 700,
+              }}>추가</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      const [shelves, setShelves] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [saving, setSaving] = useState(false);
+      const [error, setError] = useState(null);
+      const [addModal, setAddModal] = useState(null);
+
+      const fetchData = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+          const res = await fetch(API_URL);
+          const data = await res.json();
+          setShelves(groupByFloor(data));
+        } catch (e) {
+          setError("데이터를 불러오지 못했어요. 잠시 후 다시 시도해주세요.");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      useEffect(() => { fetchData(); }, []);
+
+      const saveToSheet = async (newShelves) => {
+        setSaving(true);
+        try {
+          const newRaw = newShelves.flatMap(s => s.items);
+          await fetch(API_URL, { method: "POST", body: JSON.stringify(newRaw) });
+        } catch (e) {
+          setError("저장 중 오류가 발생했어요.");
+        } finally {
+          setSaving(false);
+        }
+      };
+
+      const deleteItem = (floorIdx, itemIdx) => {
+        const newShelves = shelves.map((shelf, fi) =>
+          fi !== floorIdx ? shelf : { ...shelf, items: shelf.items.filter((_, ii) => ii !== itemIdx) }
+        );
+        setShelves(newShelves);
+        saveToSheet(newShelves);
+      };
+
+      const addItem = (floorIdx, { name, icon }) => {
+        const shelf = shelves[floorIdx];
+        const newItem = { floor: shelf.floor, label: shelf.label, id: `${shelf.floor}-${Date.now()}`, name, icon };
+        const newShelves = shelves.map((s, fi) =>
+          fi !== floorIdx ? s : { ...s, items: [...s.items, newItem] }
+        );
+        setShelves(newShelves);
+        saveToSheet(newShelves);
+        setAddModal(null);
+      };
+
+      const totalItems = shelves.reduce((s, sh) => s + sh.items.length, 0);
+
+      return (
+        <div style={{
+          minHeight: "100vh",
+          background: "linear-gradient(160deg, #fdf6ee 0%, #f5ede0 100%)",
+          fontFamily: "'Segoe UI', 'Apple SD Gothic Neo', sans-serif",
+          padding: "24px 16px 48px",
+        }}>
+          <div style={{ maxWidth: "560px", margin: "0 auto" }}>
+
+            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "24px" }}>
+              <div>
+                <div style={{ fontSize: "11px", color: "#b07a3a", letterSpacing: "2px", fontWeight: 600, textTransform: "uppercase" }}>
+                  UXS SNACK BAR
+                </div>
+                <div style={{ fontSize: "26px", fontWeight: 800, color: "#3a2a14", lineHeight: 1.1 }}>
+                  🍪 다과 선반 재고
+                </div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
+                <div style={{ fontSize: "13px", color: "#888" }}>
+                  총 <b style={{ color: "#3a2a14", fontSize: "22px" }}>{totalItems}</b>종
+                </div>
+                <button onClick={fetchData} style={{
+                  fontSize: "11px", color: "#b07a3a", background: "none",
+                  border: "1px solid #e2c89a", borderRadius: "6px",
+                  padding: "3px 10px", cursor: "pointer",
+                }}>↺ 새로고침</button>
+              </div>
+            </div>
+
+            {saving && (
+              <div style={{ fontSize: "12px", color: "#b07a3a", marginBottom: "12px", textAlign: "center" }}>
+                💾 저장 중...
+              </div>
+            )}
+            {error && (
+              <div style={{ fontSize: "12px", color: "#e53e3e", marginBottom: "12px", background: "#fff5f5", borderRadius: "8px", padding: "8px 12px" }}>
+                {error}
+              </div>
+            )}
+
+            {loading ? (
+              <div style={{ textAlign: "center", padding: "60px 0", color: "#c49a6c", fontSize: "14px" }}>
+                <div style={{ fontSize: "32px", marginBottom: "12px" }}>☕</div>
+                불러오는 중...
+              </div>
+            ) : (
+              shelves.map((shelf, fi) => (
+                <div key={shelf.floor}>
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: "10px",
+                    marginBottom: "10px", marginTop: fi === 0 ? "0" : "24px",
+                  }}>
+                    <div style={{
+                      background: "#7c5c3e", color: "#fff", borderRadius: "8px",
+                      padding: "3px 12px", fontSize: "12px", fontWeight: 700,
+                      letterSpacing: "0.5px", whiteSpace: "nowrap",
+                    }}>{shelf.label}</div>
+                    <div style={{ flex: 1, height: "1px", background: "#e8d5b8" }} />
+                    <button onClick={() => setAddModal({ floorIdx: fi, floor: shelf.floor, label: shelf.label })} style={{
+                      background: "none", border: "1.5px dashed #c48b3a", borderRadius: "8px",
+                      color: "#c48b3a", fontSize: "11px", padding: "3px 10px",
+                      cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap",
+                    }}>+ 추가</button>
+                  </div>
+
+                  {shelf.items.length === 0 ? (
+                    <div style={{
+                      background: "#f0f0f0", border: "2px dashed #ccc", borderRadius: "14px",
+                      padding: "28px", textAlign: "center", color: "#aaa", fontSize: "14px",
+                    }}>
+                      <div style={{ fontSize: "28px", marginBottom: "6px" }}>🕳️</div>
+                      텅텅 — 아직 비어있어요
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                      {shelf.items.map((item, ii) => (
+                        <ItemCard key={item.id || item.name + ii} item={item} onDelete={() => deleteItem(fi, ii)} />
+                      ))}
+                    </div>
+                  )}
+
+                  <div style={{
+                    height: "10px",
+                    background: "linear-gradient(180deg, #c49a6c 0%, #a0723e 100%)",
+                    borderRadius: "0 0 6px 6px", marginTop: "12px",
+                    boxShadow: "0 3px 8px rgba(100,60,10,0.18)",
+                  }} />
+                </div>
+              ))
+            )}
+          </div>
+
+          {addModal && (
+            <AddItemModal
+              floorLabel={addModal.label}
+              onAdd={(item) => addItem(addModal.floorIdx, item)}
+              onClose={() => setAddModal(null)}
+            />
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
