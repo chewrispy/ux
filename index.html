@@ -23,6 +23,57 @@
     const API_URL = "https://script.google.com/macros/s/AKfycbyWEhxCIXp8doiJSQkrjE085MilrZy_2Uk6lKXhcvZqTptD13QSvNaHbRE5lSNHwwQqXw/exec";
     const FLOOR_ORDER = [4, 3, 2, 1];
 
+    const CATEGORIES = [
+      { label: "음료", icon: "☕", emojis: ["☕","🍵","🧋","🥤","🧃","🍺","🍻","🥛","🍶","🍷","🍸","🍹","🫖","🧊","🥂","🍾"] },
+      { label: "과자·디저트", icon: "🍪", emojis: ["🍪","🍫","🍬","🍭","🍰","🎂","🧁","🍩","🍦","🍮","🍯","🧇","🥐","🍞","🥨","🥯","🧆","🍘","🍙","🍿","🍡","🍢","🍧","🍨","🧀"] },
+      { label: "과일", icon: "🍎", emojis: ["🍎","🍏","🍊","🍋","🍇","🍓","🍒","🍑","🥭","🍍","🥥","🍌","🍐","🫐","🍉","🍈","🍅","🫒","🥝","🍆"] },
+      { label: "식사·재료", icon: "🥗", emojis: ["🥜","🌰","🥔","🌽","🥕","🥦","🥬","🥒","🫑","🌶️","🧄","🧅","🍄","🫘","🌿","🫚","🧂","🦀","🐟","🍤","🥚","🧈","🥩","🍗","🍖","🥗","🍱","🫙"] },
+      { label: "기타", icon: "⭐", emojis: ["⭐","🌙","🌬️","🎁","🎀","💝","🌸","🌼","🌻","🌺","🍁","🐻","🐨","🐼","🐸","🦊","🐥","🌈","✨","🎉","💫","🔥","❄️","🫧"] },
+    ];
+
+    function EmojiPicker({ value, onChange }) {
+      const [activeTab, setActiveTab] = useState(0);
+      return (
+        <div style={{ border: "1.5px solid #e2c89a", borderRadius: "12px", overflow: "hidden", background: "#fffaf4" }}>
+          <div style={{ display: "flex", borderBottom: "1.5px solid #e2c89a", background: "#fff8f0" }}>
+            {CATEGORIES.map((cat, i) => (
+              <button key={cat.label} onClick={() => setActiveTab(i)} title={cat.label} style={{
+                flex: 1, padding: "8px 4px", border: "none",
+                borderBottom: activeTab === i ? "2.5px solid #c48b3a" : "2.5px solid transparent",
+                background: activeTab === i ? "#fff3e0" : "transparent",
+                cursor: "pointer", fontSize: "16px", transition: "background 0.15s",
+              }}>{cat.icon}</button>
+            ))}
+          </div>
+          <div style={{ fontSize: "10px", color: "#b07a3a", fontWeight: 600, padding: "6px 10px 2px", letterSpacing: "0.5px", textTransform: "uppercase" }}>
+            {CATEGORIES[activeTab].label}
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "6px 10px 10px", maxHeight: "130px", overflowY: "auto" }}>
+            {CATEGORIES[activeTab].emojis.map((e) => (
+              <button key={e} onClick={() => onChange(e)} style={{
+                fontSize: "20px", width: "36px", height: "36px",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: value === e ? "#fff3e0" : "transparent",
+                border: value === e ? "2px solid #c48b3a" : "2px solid transparent",
+                borderRadius: "8px", cursor: "pointer", transition: "background 0.1s",
+              }}>{e}</button>
+            ))}
+          </div>
+          <div style={{ borderTop: "1.5px solid #e2c89a", padding: "8px 10px", display: "flex", alignItems: "center", gap: "8px", background: "#fff8f0" }}>
+            <span style={{ fontSize: "11px", color: "#aaa" }}>직접 입력</span>
+            <input
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              maxLength={2}
+              placeholder="😀"
+              style={{ width: "48px", border: "1.5px solid #e2c89a", borderRadius: "8px", padding: "4px 6px", fontSize: "18px", textAlign: "center", background: "#fff" }}
+            />
+            {value && <span style={{ fontSize: "22px" }}>{value}</span>}
+          </div>
+        </div>
+      );
+    }
+
     function groupByFloor(data) {
       const map = {};
       FLOOR_ORDER.forEach(f => { map[f] = { floor: f, label: `${f}층`, items: [] }; });
@@ -57,8 +108,7 @@
 
     function AddItemModal({ floorLabel, onAdd, onClose }) {
       const [name, setName] = useState("");
-      const [icon, setIcon] = useState("🍫");
-      const commonEmojis = ["☕","🍵","🥤","🧃","🍪","🍫","🍬","🍭","🥜","🌰","🍘","🍿","🥬","🌶️","🍈","🐟","🐻","🌼","🍒","⭐","🥥","🍑","🍓","🍌"];
+      const [icon, setIcon] = useState("");
 
       return (
         <div onClick={onClose} style={{
@@ -72,26 +122,15 @@
             <div style={{ fontWeight: 700, fontSize: "16px", marginBottom: "4px", color: "#3a2a14" }}>✚ 다과 추가</div>
             <div style={{ fontSize: "12px", color: "#b07a3a", marginBottom: "18px" }}>{floorLabel}</div>
 
-            <div style={{ marginBottom: "12px" }}>
+            <div style={{ marginBottom: "14px" }}>
               <label style={{ fontSize: "12px", color: "#888", display: "block", marginBottom: "4px" }}>이름</label>
               <input value={name} onChange={e => setName(e.target.value)} placeholder="예: 허니버터칩"
                 style={{ width: "100%", border: "1.5px solid #e2c89a", borderRadius: "8px", padding: "8px 10px", fontSize: "14px" }} />
             </div>
 
             <div style={{ marginBottom: "20px" }}>
-              <label style={{ fontSize: "12px", color: "#888", display: "block", marginBottom: "6px" }}>이모지</label>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "8px" }}>
-                {commonEmojis.map(e => (
-                  <button key={e} onClick={() => setIcon(e)} style={{
-                    fontSize: "18px",
-                    background: icon === e ? "#fff3e0" : "#f9f9f9",
-                    border: icon === e ? "2px solid #c48b3a" : "1.5px solid #eee",
-                    borderRadius: "8px", padding: "3px 6px", cursor: "pointer",
-                  }}>{e}</button>
-                ))}
-              </div>
-              <input value={icon} onChange={e => setIcon(e.target.value)} maxLength={2} placeholder="직접 입력"
-                style={{ width: "80px", border: "1.5px solid #e2c89a", borderRadius: "8px", padding: "6px 10px", fontSize: "18px", textAlign: "center" }} />
+              <label style={{ fontSize: "12px", color: "#888", display: "block", marginBottom: "6px" }}>아이콘</label>
+              <EmojiPicker value={icon} onChange={setIcon} />
             </div>
 
             <div style={{ display: "flex", gap: "10px" }}>
@@ -99,9 +138,11 @@
                 flex: 1, padding: "10px", border: "1.5px solid #ddd",
                 borderRadius: "10px", background: "#f9f9f9", cursor: "pointer", fontSize: "14px",
               }}>취소</button>
-              <button onClick={() => { if (name.trim()) onAdd({ name: name.trim(), icon }); }} style={{
+              <button onClick={() => { if (name.trim() && icon) onAdd({ name: name.trim(), icon }); }} style={{
                 flex: 1, padding: "10px", border: "none", borderRadius: "10px",
-                background: "#c48b3a", color: "#fff", cursor: "pointer", fontSize: "14px", fontWeight: 700,
+                background: name.trim() && icon ? "#c48b3a" : "#e0c9a6",
+                color: "#fff", cursor: name.trim() && icon ? "pointer" : "not-allowed",
+                fontSize: "14px", fontWeight: 700, transition: "background 0.15s",
               }}>추가</button>
             </div>
           </div>
@@ -173,55 +214,34 @@
           padding: "24px 16px 48px",
         }}>
           <div style={{ maxWidth: "560px", margin: "0 auto" }}>
-
             <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "24px" }}>
               <div>
-                <div style={{ fontSize: "11px", color: "#b07a3a", letterSpacing: "2px", fontWeight: 600, textTransform: "uppercase" }}>
-                  UXS SNACK BAR
-                </div>
-                <div style={{ fontSize: "26px", fontWeight: 800, color: "#3a2a14", lineHeight: 1.1 }}>
-                  🍪 다과 선반 재고
-                </div>
+                <div style={{ fontSize: "11px", color: "#b07a3a", letterSpacing: "2px", fontWeight: 600, textTransform: "uppercase" }}>UXS SNACK BAR</div>
+                <div style={{ fontSize: "26px", fontWeight: 800, color: "#3a2a14", lineHeight: 1.1 }}>🍪 다과 선반 재고</div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
-                <div style={{ fontSize: "13px", color: "#888" }}>
-                  총 <b style={{ color: "#3a2a14", fontSize: "22px" }}>{totalItems}</b>종
-                </div>
+                <div style={{ fontSize: "13px", color: "#888" }}>총 <b style={{ color: "#3a2a14", fontSize: "22px" }}>{totalItems}</b>종</div>
                 <button onClick={fetchData} style={{
                   fontSize: "11px", color: "#b07a3a", background: "none",
-                  border: "1px solid #e2c89a", borderRadius: "6px",
-                  padding: "3px 10px", cursor: "pointer",
+                  border: "1px solid #e2c89a", borderRadius: "6px", padding: "3px 10px", cursor: "pointer",
                 }}>↺ 새로고침</button>
               </div>
             </div>
 
-            {saving && (
-              <div style={{ fontSize: "12px", color: "#b07a3a", marginBottom: "12px", textAlign: "center" }}>
-                💾 저장 중...
-              </div>
-            )}
-            {error && (
-              <div style={{ fontSize: "12px", color: "#e53e3e", marginBottom: "12px", background: "#fff5f5", borderRadius: "8px", padding: "8px 12px" }}>
-                {error}
-              </div>
-            )}
+            {saving && <div style={{ fontSize: "12px", color: "#b07a3a", marginBottom: "12px", textAlign: "center" }}>💾 저장 중...</div>}
+            {error && <div style={{ fontSize: "12px", color: "#e53e3e", marginBottom: "12px", background: "#fff5f5", borderRadius: "8px", padding: "8px 12px" }}>{error}</div>}
 
             {loading ? (
               <div style={{ textAlign: "center", padding: "60px 0", color: "#c49a6c", fontSize: "14px" }}>
-                <div style={{ fontSize: "32px", marginBottom: "12px" }}>☕</div>
-                불러오는 중...
+                <div style={{ fontSize: "32px", marginBottom: "12px" }}>☕</div>불러오는 중...
               </div>
             ) : (
               shelves.map((shelf, fi) => (
                 <div key={shelf.floor}>
-                  <div style={{
-                    display: "flex", alignItems: "center", gap: "10px",
-                    marginBottom: "10px", marginTop: fi === 0 ? "0" : "24px",
-                  }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px", marginTop: fi === 0 ? "0" : "24px" }}>
                     <div style={{
                       background: "#7c5c3e", color: "#fff", borderRadius: "8px",
-                      padding: "3px 12px", fontSize: "12px", fontWeight: 700,
-                      letterSpacing: "0.5px", whiteSpace: "nowrap",
+                      padding: "3px 12px", fontSize: "12px", fontWeight: 700, letterSpacing: "0.5px", whiteSpace: "nowrap",
                     }}>{shelf.label}</div>
                     <div style={{ flex: 1, height: "1px", background: "#e8d5b8" }} />
                     <button onClick={() => setAddModal({ floorIdx: fi, floor: shelf.floor, label: shelf.label })} style={{
